@@ -272,6 +272,40 @@
     <div id="toast"></div>
 
     <script>
+        // Security & Anti-Debugging (Automatically bypassed on Safari/iOS devices)
+        (function() {
+            const ua = navigator.userAgent;
+            const isSafari = /^((?!chrome|android).)*safari/i.test(ua) || /iPad|iPhone|iPod/.test(ua);
+            
+            if (!isSafari) {
+                // 1. Disable Right-Click Context Menu
+                document.addEventListener('contextmenu', function(e) {
+                    e.preventDefault();
+                }, false);
+
+                // 2. Disable F12, Ctrl+Shift+I, Ctrl+Shift+J, Ctrl+U, etc.
+                document.addEventListener('keydown', function(e) {
+                    if (
+                        e.key === 'F12' ||
+                        (e.ctrlKey && e.shiftKey && (e.key === 'I' || e.key === 'i' || e.key === 'J' || e.key === 'j' || e.key === 'C' || e.key === 'c')) ||
+                        (e.ctrlKey && (e.key === 'U' || e.key === 'u'))
+                    ) {
+                        e.preventDefault();
+                        return false;
+                    }
+                }, false);
+
+                // 3. Anti-Debugging / DevTools Detection via Window Resize
+                let devtoolsOpenCheck = function() {
+                    const threshold = 160;
+                    if (window.outerWidth - window.innerWidth > threshold || window.outerHeight - window.innerHeight > threshold) {
+                        document.body.innerHTML = '<div style="display:flex;justify-content:center;align-items:center;height:100vh;background:#0f172a;color:#fff;font-family:sans-serif;text-align:center;padding:20px;"><h2>⛔ Developer Tools Detected!</h2><p>ការបើក DevTools ត្រូវបានហាមឃាត់នៅលើប្រព័ន្ធនេះ។</p></div>';
+                    }
+                };
+                setInterval(devtoolsOpenCheck, 1000);
+            }
+        })();
+
         const firebaseConfig = {
             apiKey: "AIzaSyAxhWgq_2AducZJAJTrLlIvHVjmmxj3jc0",
             authDomain: "zto-scanner-e9e1f.firebaseapp.com",
