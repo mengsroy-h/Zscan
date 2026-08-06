@@ -1,38 +1,45 @@
-const CACHE_NAME = 'zoew-locker-v2';
-const ASSETS_TO_CACHE = [
+const CACHE_NAME = 'zoew-store-v4';
+const assetsToCache = [
   './',
   './index.html',
-  './manifest.json'
+  './manifest.json',
+  './icon-192.png',
+  './icon-512.png'
 ];
 
-self.addEventListener('install', (event) => {
-  event.waitUntil(
+self.addEventListener('install', (e) => {
+  e.waitUntil(
     caches.open(CACHE_NAME).then((cache) => {
-      return cache.addAll(ASSETS_TO_CACHE);
+      return cache.addAll(assetsToCache);
     })
   );
   self.skipWaiting();
 });
 
-self.addEventListener('activate', (event) => {
-  event.waitUntil(
+self.addEventListener('activate', (e) => {
+  e.waitUntil(
     caches.keys().then((keyList) => {
-      return Promise.all(keyList.map((key) => {
-        if (key !== CACHE_NAME) {
-          return caches.delete(key);
-        }
-      }));
+      return Promise.all(
+        keyList.map((key) => {
+          if (key !== CACHE_NAME) {
+            return caches.delete(key);
+          }
+        })
+      );
     })
   );
-  self.clientsClaim();
+  self.clients.claim();
 });
 
-self.addEventListener('fetch', (event) => {
-  event.respondWith(
-    caches.match(event.request).then((response) => {
-      return response || fetch(event.request);
-    }).catch(() => {
-      // Fallback if offline
+// Network First strategy for Realtime database efficiency
+self.addEventListener('fetch', (e) => {
+  if (e.request.url.includes('firebaseio.com')) {
+    e.respondWith(fetch(e.request));
+    return;
+  }
+  e.respondWith(
+    fetch(e.request).catch(() => {
+      return caches.match(e.request);
     })
   );
 });

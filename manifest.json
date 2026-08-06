@@ -1,20 +1,20 @@
 {
-  "name": "ZoeW - ប្រព័ន្ធគ្រប់គ្រងទីតាំងកញ្ចប់អីវ៉ាន់",
-  "short_name": "ZoeW Locker",
+  "name": "ZoeW - ប្រព័ន្ធគ្រប់គ្រងអីវ៉ាន់",
+  "short_name": "ZoeW",
   "start_url": "./index.html",
-  "scope": "./",
   "display": "standalone",
   "background_color": "#f8fafc",
-  "theme_color": "#0288d1",
+  "theme_color": "#e31837",
+  "orientation": "portrait",
   "icons": [
     {
-      "src": "./icons/icon-192x192.png",
+      "src": "./icon-192.png",
       "sizes": "192x192",
       "type": "image/png",
       "purpose": "any maskable"
     },
     {
-      "src": "./icons/icon-512x512.png",
+      "src": "./icon-512.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "any maskable"
