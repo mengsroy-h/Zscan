@@ -392,7 +392,6 @@
                 scanHistory = [];
                 renderLockerStorageTable(); // Reset table when logged out
                 if (dbRefHistory) dbRefHistory.off();
-                // បិទកាមេរ៉ាស្វ័យប្រវត្តិពេល Logout ចេញ ដើម្បីកុំឱ្យជាប់ដំណើរការចោល
                 stopCamera();
             }
         });
@@ -410,7 +409,6 @@
                 return;
             }
 
-            // បិទប៊ូតុងកំឡុងពេលកំពុង Login ដើម្បីការពារការចុចញឹកញាប់ពេក (Multiple Clicks)
             btnLogin.disabled = true;
             btnLogin.innerText = "កំពុងចូល...";
 
@@ -431,7 +429,6 @@
         }
 
         window.addEventListener('load', function () {
-            // បង្ហាញតារាងទទេរដំបូងបង្អស់ពេលផ្ទុកទំព័រ
             renderLockerStorageTable();
 
             const hints = new Map();
@@ -511,11 +508,10 @@
             }
         }
 
-        // មុខងារសម្រាប់បិទកាមេរ៉ា និងសម្អាត Stream ចាស់ចោលដើម្បីការពារ Memory Leak និង Camera Busy
         function stopCamera() {
             if (currentStream) {
                 currentStream.getTracks().forEach(track => {
-                    track.stop(); // បិទរាល់ track របស់កាមេរ៉ា
+                    track.stop();
                 });
                 currentStream = null;
             }
@@ -525,13 +521,12 @@
             }
             if (codeReader) {
                 try {
-                    codeReader.reset(); // ការអាន ZXing reader ប្រសិនបើមានប្រើប្រាស់
+                    codeReader.reset();
                 } catch (e) {}
             }
         }
 
         function requestCameraPermission() {
-            // ហៅមុខងារ stopCamera មុន ដើម្បីធានាថា Stream ចាស់ត្រូវបានបិទស្អាត 100% មុនបើកថ្មី
             stopCamera();
 
             const constraints = { video: { facingMode: { ideal: "environment" }, width: { ideal: 640 }, height: { ideal: 480 } } };
@@ -598,7 +593,6 @@
             playBeep();
             if (navigator.vibrate) navigator.vibrate(150);
 
-            // ការពារករណីស្កេនមុនពេលទិន្នន័យពី Firebase មកដល់
             if (!scanHistory || scanHistory.length === 0) {
                 showToast("⚠️ ទិន្នន័យកំពុងផ្ទុកពី Server សូមរង់ចាំបន្តិច...");
                 return;
@@ -625,7 +619,8 @@
             let selectedLocker = getCurrentSelectedLocker();
 
             if (foundItem) {
-                if (existingLocker && existingLocker !== "" && existingLocker !== "មិនទាន់កំណត់") {
+                // ប្រសិនបើមានទីតាំងរួចហើយ ហើយទីតាំងនោះ "មិនមែនជា N/A" ឬ "មិនទាន់កំណត់" ទើបលោត Modal សួរ
+                if (existingLocker && existingLocker !== "" && existingLocker !== "មិនទាន់កំណត់" && existingLocker.toUpperCase() !== "N/A") {
                     pendingBarcode = cleanBarcode;
                     pendingSelectedLocker = selectedLocker;
                     document.getElementById('modalMessage').innerHTML = `Barcode <b>${sanitizeHTML(cleanBarcode)}</b> មានទីតាំងក្នុង <b>${sanitizeHTML(existingLocker)}</b> រួចហើយ!<br>តើអ្នកចង់ប្តូរទៅ <b>${sanitizeHTML(selectedLocker)}</b> ដែរឬទេ?`;
@@ -633,6 +628,7 @@
                     return;
                 }
 
+                // បើជា N/A ឬគ្មានទីតាំងទេ គឺរក្សាទុកចូលទីតាំងថ្មីភ្លាមៗដោយស្វ័យប្រវត្តិដោយមិនបាច់លោតសួរ
                 saveLockerData(cleanBarcode, selectedLocker);
             } else {
                 showToast(`⚠️ រកមិនឃើញ Barcode (${sanitizeHTML(cleanBarcode)}) នេះក្នុង Database ទេ!`);
