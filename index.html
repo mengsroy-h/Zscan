@@ -272,18 +272,12 @@
     <div id="toast"></div>
 
     <script>
-        // Security & Anti-Debugging (Automatically bypassed on Safari/iOS devices)
+        /* --- Anti-Debugging & Security Protection (Safari Safe) --- */
         (function() {
-            const ua = navigator.userAgent;
-            const isSafari = /^((?!chrome|android).)*safari/i.test(ua) || /iPad|iPhone|iPod/.test(ua);
-            
-            if (!isSafari) {
-                // 1. Disable Right-Click Context Menu
-                document.addEventListener('contextmenu', function(e) {
-                    e.preventDefault();
-                }, false);
+            const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
 
-                // 2. Disable F12, Ctrl+Shift+I, Ctrl+Shift+J, Ctrl+U, etc.
+            // 1. Block F12, shortcuts (Disabled for Safari to ensure normal browser behavior)
+            if (!isSafari) {
                 document.addEventListener('keydown', function(e) {
                     if (
                         e.key === 'F12' ||
@@ -291,20 +285,19 @@
                         (e.ctrlKey && (e.key === 'U' || e.key === 'u'))
                     ) {
                         e.preventDefault();
+                        e.stopPropagation();
                         return false;
                     }
-                }, false);
+                });
 
-                // 3. Anti-Debugging / DevTools Detection via Window Resize
-                let devtoolsOpenCheck = function() {
-                    const threshold = 160;
-                    if (window.outerWidth - window.innerWidth > threshold || window.outerHeight - window.innerHeight > threshold) {
-                        document.body.innerHTML = '<div style="display:flex;justify-content:center;align-items:center;height:100vh;background:#0f172a;color:#fff;font-family:sans-serif;text-align:center;padding:20px;"><h2>⛔ Developer Tools Detected!</h2><p>ការបើក DevTools ត្រូវបានហាមឃាត់នៅលើប្រព័ន្ធនេះ។</p></div>';
-                    }
-                };
-                setInterval(devtoolsOpenCheck, 1000);
+                // 2. Block Right-Click Context Menu
+                document.addEventListener('contextmenu', function(e) {
+                    e.preventDefault();
+                });
             }
+            // រំលងការប្រើ setInterval បង្កហានិភ័យគាំងទំព័រនៅលើ Mobile/Safari
         })();
+        /* --------------------------------------------------------- */
 
         const firebaseConfig = {
             apiKey: "AIzaSyAxhWgq_2AducZJAJTrLlIvHVjmmxj3jc0",
@@ -331,7 +324,7 @@
         let lastScannedCode = "";
         let lastScanTime = 0;
 
-        // Register Service Worker for PWA (ប្រើ Relative Path './sw.js')
+        // Register Service Worker for PWA
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
                 navigator.serviceWorker.register('./sw.js')
@@ -439,7 +432,8 @@
 
         function submitManualBarcode() {
             const hwInput = document.getElementById('hwScannerInput');
-            let scannedCode = sanitizeInput(hwInput.value.trim());
+            // ប្រើប្រាស់តម្លៃឆៅ (Raw Value) ដោយមិនហៅ sanitizeHTML ត្រង់នេះទេ
+            let scannedCode = String(hwInput.value).trim();
             if (scannedCode) {
                 hwInput.value = '';
                 processScannedLockerBarcode(scannedCode);
@@ -472,7 +466,14 @@
                     }
                 })
                 .catch(err => {
-                    alert("មិនអាចបើកកាមេរ៉ាបានទេ៖ សូមពិនិត្យមើលសិទ្ធិកាមេរ៉ា ឬ HTTPS ។");
+                    // កែសម្រួល៖ បង្ហាញសារនៅលើ UI ផ្ទាល់ជំនួសឱ្យការប្រើប្រាស់ alert ដាច់ខាត
+                    const permissionBox = document.getElementById('permission-box');
+                    permissionBox.style.display = 'block';
+                    permissionBox.innerHTML = `
+                        <p style="color: var(--danger);">❌ មិនអាចបើកកាមេរ៉ាបានទេ៖ សូមពិនិត្យសិទ្ធិ ឬប្រើប្រាស់ HTTPS</p>
+                        <button onclick="requestCameraPermission()" style="margin-top: 6px;">🔄 ព្យាយាមម្តងទៀត</button>
+                    `;
+                    showToast("⚠️ កាមេរ៉ាត្រូវបានបដិសេធ ឬមិនមាននៅលើឧបករណ៍នេះ");
                 });
         }
 
@@ -499,7 +500,8 @@
         }
 
         function processScannedLockerBarcode(barcode) {
-            let cleanBarcode = sanitizeInput(barcode);
+            // រក្សាទុកតម្លៃឆៅ (Raw Data) សម្រាប់ឆែកជាមួយ Database មិនឱ្យមានបញ្ហា Mismatch
+            let cleanBarcode = String(barcode).trim();
             let currentTime = new Date().getTime();
             
             if (cleanBarcode === lastScannedCode && (currentTime - lastScanTime < 3000)) return;
@@ -512,9 +514,9 @@
             let foundItem = null;
             for (let item of scanHistory) {
                 if (item.barcodes && Array.isArray(item.barcodes)) {
-                    let match = item.barcodes.find(b => b.code === cleanBarcode);
+                    let match = item.barcodes.find(b => String(b.code).trim() === cleanBarcode);
                     if (match) { foundItem = item; break; }
-                } else if (item.barcode === cleanBarcode) {
+                } else if (String(item.barcode).trim() === cleanBarcode) {
                     foundItem = item;
                     break;
                 }
@@ -525,7 +527,7 @@
             if (foundItem) {
                 if (foundItem.barcodes && Array.isArray(foundItem.barcodes)) {
                     foundItem.barcodes.forEach(b => {
-                        if (b.code === cleanBarcode) b.locker = selectedLocker;
+                        if (String(b.code).trim() === cleanBarcode) b.locker = selectedLocker;
                     });
                 }
                 foundItem.locker = selectedLocker;
@@ -540,7 +542,8 @@
             }
         }
 
-        function sanitizeInput(str) {
+        // មុខងារដាច់ដោយឡែកសម្រាប់ការពារ XSS ពេលបង្ហាញទិន្នន័យលើ HTML
+        function sanitizeHTML(str) {
             if (!str) return '';
             return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
         }
@@ -590,9 +593,9 @@
                             htmlRows += `
                                 <tr>
                                     <td style="text-align: center; font-weight: 600;">${index++}</td>
-                                    <td><strong>${sanitizeInput(item.phone)}</strong></td>
-                                    <td><span class="barcode-tag">🏷️ ${sanitizeInput(b.code)}</span></td>
-                                    <td><span class="locker-badge">📍 ${sanitizeInput(b.locker || item.locker || 'មិនទាន់កំណត់')}</span></td>
+                                    <td><strong>${sanitizeHTML(item.phone)}</strong></td>
+                                    <td><span class="barcode-tag">🏷️ ${sanitizeHTML(b.code)}</span></td>
+                                    <td><span class="locker-badge">📍 ${sanitizeHTML(b.locker || item.locker || 'មិនទាន់កំណត់')}</span></td>
                                 </tr>
                             `;
                         }
@@ -601,9 +604,9 @@
                     htmlRows += `
                         <tr>
                             <td style="text-align: center; font-weight: 600;">${index++}</td>
-                            <td><strong>${sanitizeInput(item.phone)}</strong></td>
-                            <td><span class="barcode-tag">🏷️ ${sanitizeInput(item.barcode)}</span></td>
-                            <td><span class="locker-badge">📍 ${sanitizeInput(item.locker || 'មិនទាន់កំណត់')}</span></td>
+                            <td><strong>${sanitizeHTML(item.phone)}</strong></td>
+                            <td><span class="barcode-tag">🏷️ ${sanitizeHTML(item.barcode)}</span></td>
+                            <td><span class="locker-badge">📍 ${sanitizeHTML(item.locker || 'មិនទាន់កំណត់')}</span></td>
                         </tr>
                     `;
                 }
