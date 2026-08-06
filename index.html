@@ -10,8 +10,8 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="theme-color" content="#0288d1">
     
-    <link rel="manifest" href="./manifest.json">
-    <link rel="apple-touch-icon" href="./icons/icon-192x192.png">
+    <link rel="manifest" href="manifest.json">
+    <link rel="apple-touch-icon" href="icons/icon-192x192.png">
 
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -297,7 +297,7 @@
         let lastScannedCode = "";
         let lastScanTime = 0;
 
-        // Register Service Worker for PWA
+        // Register Service Worker for PWA (ប្រើ Relative Path './sw.js')
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
                 navigator.serviceWorker.register('./sw.js')
@@ -438,7 +438,7 @@
                     }
                 })
                 .catch(err => {
-                    alert("មិនអាចបើកកាមេរ៉ាได้ទេ៖ សូមពិនិត្យមើលសិទ្ធិកាមេរ៉ា ឬ HTTPS ។");
+                    alert("មិនអាចបើកកាមេរ៉ាបានទេ៖ សូមពិនិត្យមើលសិទ្ធិកាមេរ៉ា ឬ HTTPS ។");
                 });
         }
 
@@ -551,7 +551,7 @@
 
             activeItems.forEach(item => {
                 if (item.barcodes && Array.isArray(item.barcodes)) {
-                    item.barcodes.get?.forEach?.(b => {}) || item.barcodes.forEach(b => {
+                    item.barcodes.forEach(b => {
                         if (!b.isClosed) {
                             htmlRows += `
                                 <tr>
