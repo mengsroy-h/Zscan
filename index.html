@@ -297,6 +297,15 @@
         let lastScannedCode = "";
         let lastScanTime = 0;
 
+        // Register Service Worker for PWA
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('./sw.js')
+                    .then((reg) => console.log('Service Worker registered! Scope:', reg.scope))
+                    .catch((err) => console.log('Service Worker registration failed:', err));
+            });
+        }
+
         // Firebase Auth State Listener
         auth.onAuthStateChanged((user) => {
             if (user) {
