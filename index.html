@@ -267,7 +267,7 @@
             <div class="hardware-scanner-box">
                 <label for="hwScannerInput">⚡ ស្កេនតាម Bluetooth / វាយបញ្ចូល Barcode</label>
                 <div class="scanner-input-wrapper">
-                    <span class="icon">📷</span>
+                    <span class="icon">⚡</span>
                     <input type="text" id="hwScannerInput" placeholder="ស្កេន ឬវាយ Barcode ទីនេះ..." autocomplete="off">
                     <button type="button" class="btn-submit-barcode" onclick="submitManualBarcode()">បញ្ចូល</button>
                 </div>
@@ -357,7 +357,7 @@
         
         const auth = firebase.auth();
         const db = firebase.database();
-        let dbRefHistory = null;
+        let dbRefHistory = null; //
 
         let codeReader;
         let currentStream = null;
@@ -390,8 +390,9 @@
                 document.getElementById('auth-overlay').style.display = 'flex';
                 document.getElementById('userEmailDisplay').innerText = 'Guest';
                 scanHistory = [];
-                renderLockerStorageTable(); // Reset table when logged out
+                renderLockerStorageTable();
                 if (dbRefHistory) dbRefHistory.off();
+                dbRefHistory = null;
                 stopCamera();
             }
         });
@@ -485,9 +486,12 @@
 
         function setupHardwareScanner() {
             const hwInput = document.getElementById('hwScannerInput');
+            
             setInterval(() => {
-                if (document.activeElement.tagName !== 'INPUT' && document.activeElement.tagName !== 'SELECT') {
-                    hwInput.focus();
+                if (window.innerWidth > 992) {
+                    if (document.activeElement.tagName !== 'INPUT' && document.activeElement.tagName !== 'SELECT') {
+                        hwInput.focus();
+                    }
                 }
             }, 1000);
 
@@ -583,6 +587,12 @@
         }
 
         function processScannedLockerBarcode(barcode) {
+            if (!dbRefHistory || !auth.currentUser) {
+                showToast("⚠️ សូមធ្វើការ Login ចូលក្នុងប្រព័ន្ធជាមុនសិន!");
+                document.getElementById('auth-overlay').style.display = 'flex';
+                return;
+            }
+
             let cleanBarcode = String(barcode).trim();
             let currentTime = new Date().getTime();
             
@@ -619,7 +629,6 @@
             let selectedLocker = getCurrentSelectedLocker();
 
             if (foundItem) {
-                // ប្រសិនបើមានទីតាំងរួចហើយ ហើយទីតាំងនោះ "មិនមែនជា N/A" ឬ "មិនទាន់កំណត់" ទើបលោត Modal សួរ
                 if (existingLocker && existingLocker !== "" && existingLocker !== "មិនទាន់កំណត់" && existingLocker.toUpperCase() !== "N/A") {
                     pendingBarcode = cleanBarcode;
                     pendingSelectedLocker = selectedLocker;
@@ -628,7 +637,6 @@
                     return;
                 }
 
-                // បើជា N/A ឬគ្មានទីតាំងទេ គឺរក្សាទុកចូលទីតាំងថ្មីភ្លាមៗដោយស្វ័យប្រវត្តិដោយមិនបាច់លោតសួរ
                 saveLockerData(cleanBarcode, selectedLocker);
             } else {
                 showToast(`⚠️ រកមិនឃើញ Barcode (${sanitizeHTML(cleanBarcode)}) នេះក្នុង Database ទេ!`);
@@ -636,6 +644,11 @@
         }
 
         function saveLockerData(cleanBarcode, selectedLocker) {
+            if (!dbRefHistory || !auth.currentUser) {
+                showToast("⚠️ មិនមានការតភ្ជាប់ទៅកាន់ Database ទេ សូម Login ម្តងទៀត។");
+                return;
+            }
+
             let foundItem = null;
             for (let item of scanHistory) {
                 if (item.barcodes && Array.isArray(item.barcodes)) {
@@ -658,7 +671,7 @@
                 dbRefHistory.set(scanHistory).then(() => {
                     showToast(`✅ បានកំណត់ទីតាំង ${sanitizeHTML(selectedLocker)} សម្រាប់ ${sanitizeHTML(cleanBarcode)}`);
                 }).catch(err => {
-                    showToast(`❌ បរាជ័យក្នុងការបញ្ជូនទិន្នន័យ`);
+                    showToast(`❌ បរាជ័យក្នុងការបញ្ជូនទិន្នន័យ: ${err.message}`);
                 });
             }
         }
